@@ -28,7 +28,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- TOP BAR -->
+            <!-- TITLE BAR -->
             <Grid Grid.Row="0" MouseDown="Window_MouseDown">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0">
                     <Ellipse Width="8" Height="8" Fill="#00FFA3" Margin="0,0,12,0"/>
@@ -40,7 +40,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- STAT CARDS -->
+            <!-- TOP STAT CARDS -->
             <UniformGrid Grid.Row="1" Columns="3">
                 <Border Style="{StaticResource StatCard}">
                     <StackPanel Margin="20">
@@ -67,18 +67,19 @@
                 </Border>
             </UniformGrid>
 
-            <!-- MAIN CONTENT -->
+            <!-- BOTTOM GRID: LEFT = Green Scores + Feed, RIGHT = Mobile Node -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="380"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- LEFT PANEL: Green Scores + System Feed -->
+                <!-- LEFT: Green Scores + System Feed -->
                 <StackPanel Grid.Column="0" Margin="10" VerticalAlignment="Top" Orientation="Vertical">
-                    <!-- GREEN SCORE CARDS -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-                        <Border Style="{StaticResource StatCard}" Margin="0,0,10,0">
+                    <!-- Green Score Cards -->
+                    <UniformGrid Columns="2" Margin="0,0,0,10">
+                        <!-- PC Green Score -->
+                        <Border Style="{StaticResource StatCard}">
                             <StackPanel Margin="10">
                                 <TextBlock Text="PC Green Score" Foreground="#AAA" FontSize="10" FontWeight="Bold"/>
                                 <TextBlock x:Name="GreenScoreText" Text="0%" Foreground="White" FontSize="14" FontWeight="Bold" Margin="0,2"/>
@@ -86,6 +87,7 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Mobile Green Score -->
                         <Border Style="{StaticResource StatCard}">
                             <StackPanel Margin="10">
                                 <TextBlock Text="Mobile Green Score" Foreground="#AAA" FontSize="10" FontWeight="Bold"/>
@@ -93,7 +95,7 @@
                                 <ProgressBar x:Name="MobileGreenScoreBar" Height="8" Value="0" Foreground="#03A9F4" Background="#11FFFFFF" BorderThickness="0"/>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
+                    </UniformGrid>
 
                     <!-- SYSTEM FEED -->
                     <Border Style="{StaticResource StatCard}" Background="#050507">
@@ -118,48 +120,30 @@
                     </Border>
                 </StackPanel>
 
-                <!-- RIGHT PANEL: Mobile Node -->
+                <!-- RIGHT: Mobile Node -->
                 <Border Grid.Column="1" Style="{StaticResource StatCard}">
                     <Grid Margin="25">
-                        <StackPanel>
-                            <TextBlock Text="MOBILE NODE" Foreground="#444" FontSize="10" FontWeight="Bold" Margin="0,0,0,20"/>
-                            <Grid x:Name="MobileDataContainer">
-                                <StackPanel>
-                                    <Grid>
-                                        <TextBlock x:Name="MobileLevelText" Text="--" Foreground="White" FontSize="60" FontWeight="Thin"/>
-                                        <TextBlock Text="BATTERY" Foreground="#444" FontSize="9" VerticalAlignment="Bottom" Margin="10,80,10,15"/>
-                                    </Grid>
+                        <StackPanel x:Name="MobileDataContainer" Opacity="0.2">
+                            <TextBlock x:Name="AdbWaitText" Text="Waiting for mobile connection..." Foreground="#666" FontSize="12" Margin="0,0,0,15"/>
 
-                                    <StackPanel Margin="0,40,0,20">
-                                        <Grid>
-                                            <TextBlock Text="MOBILE RAM USAGE" Foreground="#333" FontSize="9" FontWeight="Bold"/>
-                                            <TextBlock x:Name="MobileRamText" Text="0.0 / 0.0 GB" Foreground="#03A9F4" FontSize="11" HorizontalAlignment="Right"/>
-                                        </Grid>
-                                        <ProgressBar x:Name="MobileRamBar" Value="0" Height="4" Foreground="#03A9F4" Background="#11FFFFFF" BorderThickness="0" Margin="0,5,0,0"/>
-                                    </StackPanel>
+                            <TextBlock Text="Battery Level:" Foreground="#AAA" FontSize="10"/>
+                            <TextBlock x:Name="MobileLevelText" Text="0%" Foreground="White" FontSize="24" FontWeight="Bold"/>
 
-                                    <UniformGrid Columns="2">
-                                        <StackPanel Margin="0,5">
-                                            <TextBlock Text="HEALTH" Foreground="#333" FontSize="9"/>
-                                            <TextBlock x:Name="MobileHealthText" Text="--" Foreground="White" FontSize="14"/>
-                                        </StackPanel>
-                                        <StackPanel Margin="0,5">
-                                            <TextBlock Text="TEMP" Foreground="#333" FontSize="9"/>
-                                            <TextBlock x:Name="MobileTempText" Text="--°C" Foreground="White" FontSize="14"/>
-                                        </StackPanel>
-                                        <StackPanel Margin="0,5">
-                                            <TextBlock Text="NETWORK" Foreground="#333" FontSize="9"/>
-                                            <TextBlock x:Name="MobileNetText" Text="--" Foreground="White" FontSize="14"/>
-                                        </StackPanel>
-                                        <StackPanel Margin="0,5">
-                                            <TextBlock Text="STORAGE" Foreground="#333" FontSize="9"/>
-                                            <TextBlock x:Name="MobileStoreText" Text="--" Foreground="White" FontSize="14"/>
-                                        </StackPanel>
-                                    </UniformGrid>
-                                </StackPanel>
-                            </Grid>
+                            <TextBlock Text="Battery Health:" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="MobileHealthText" Text="GOOD" Foreground="White" FontSize="14"/>
 
-                            <TextBlock x:Name="AdbWaitText" Text="SEARCHING FOR ADB..." Foreground="#FF4B4B" FontSize="11" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                            <TextBlock Text="Battery Temp:" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="MobileTempText" Text="0°C" Foreground="White" FontSize="14"/>
+
+                            <TextBlock Text="Network:" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="MobileNetText" Text="UNKNOWN" Foreground="White" FontSize="14"/>
+
+                            <TextBlock Text="Storage Used:" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="MobileStoreText" Text="0%" Foreground="White" FontSize="14"/>
+
+                            <TextBlock Text="RAM Usage:" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="MobileRamText" Text="0 GB" Foreground="White" FontSize="14"/>
+                            <ProgressBar x:Name="MobileRamBar" Minimum="0" Maximum="100" Height="8" Value="0" Foreground="#03A9F4" Background="#11FFFFFF" Margin="0,5,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Border>

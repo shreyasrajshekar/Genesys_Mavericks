@@ -24,7 +24,7 @@ namespace DRYRUN
         private async void StartDeepScan()
         {
             // Initialize Supabase only once
-            await monitor.InitializeAsync();
+           
 
             while (true)
             {

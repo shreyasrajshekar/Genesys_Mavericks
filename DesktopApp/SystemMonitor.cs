@@ -1,12 +1,13 @@
 using Microsoft.VisualBasic.Devices;
-using Supabase;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Management;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace DRYRUN
 {
@@ -15,9 +16,8 @@ namespace DRYRUN
     {
         private readonly PerformanceCounter cpuCounter;
         private readonly PerformanceCounter ramCounter;
-        private readonly string supabaseUrl = "https://tfjrgpdsacjcmoeilldt.supabase.co";
-        private readonly string supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmanJncGRzYWNqY21vZWlsbGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwNzMzNzYsImV4cCI6MjA4NjY0OTM3Nn0.80xPt7HmPfnaJha6bPJEZvcRL9P6-yynQnuhxyYKqfg";
-        private Supabase.Client supabase;
+        private readonly string n8nWebhookUrl = "https://n8n.srv1090925.hstgr.cloud/webhook/greenloop-store";
+        private readonly HttpClient httpClient = new HttpClient();
 
         // ================= GREEN SYSTEM =================
         private int greenPoints = 0;
@@ -67,40 +67,45 @@ namespace DRYRUN
             cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             ramCounter = new PerformanceCounter("Memory", "Available MBytes");
             cpuCounter.NextValue();
-            var options = new SupabaseOptions { AutoRefreshToken = true };
-            supabase = new Supabase.Client(supabaseUrl, supabaseKey, options);
+           
         }
-        public async Task InitializeAsync()
-        {
-            await supabase.InitializeAsync();
-        }
-        public async Task PushMetricsToCloud()
+
+        private async Task PushMetricsToN8n()
         {
             try
             {
-                var metric = new Models.SystemMetric
+                var payload = new
                 {
-                    CpuUsage = this.CpuUsage,
-                    RamUsagePercent = this.RamUsagePercent,
-                    GreenScore = this.GreenScore,
-                    IsMobileConnected = this.IsMobileConnected,
-                    MobileBatteryLevel = this.MobileBatteryLevel
+                    
+                    cpuUsage = this.CpuUsage,
+                    ramUsagePercent = this.RamUsagePercent,
+                    greenScore = this.GreenScore,
+                    isMobileConnected = this.IsMobileConnected,
+                    mobileBatteryLevel = this.MobileBatteryLevel,
+                    mobileBatteryTemp = this.MobileBatteryTemp,
+                    mobileRamPercent = this.MobileRamPercent,
+                    mobileStorageUsed = this.MobileStorageUsed,
+                    mobileNetwork = this.MobileNetwork
                 };
+                
+                string json = System.Text.Json.JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-                // Capture the response to see if there is an error
-                var response = await supabase.From<Models.SystemMetric>().Insert(metric);
-                var errorText = await response.ResponseMessage.Content.ReadAsStringAsync();
-                Console.WriteLine($"Supabase insert failed: {errorText}");
-                if (response.ResponseMessage.IsSuccessStatusCode)
-                    Console.WriteLine("Data pushed successfully!");
-                else
-                    Console.WriteLine($"Error: {response.ResponseMessage.ReasonPhrase}");   
+                var response = await httpClient.PostAsync(n8nWebhookUrl, content);
+
+                // Log to file
+                string logText = response.IsSuccessStatusCode
+                    ? "Metrics sent to n8n successfully!\n"
+                    : $"Failed to send to n8n: {response.StatusCode}\nContent: {await response.Content.ReadAsStringAsync()}\n";
+
+                System.IO.File.AppendAllText("metrics_log.txt", $"{DateTime.Now}: {logText}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Critical Error: {ex.Message}");
+                System.IO.File.AppendAllText("metrics_log.txt", $"{DateTime.Now}: Error sending metrics: {ex.Message}\n");
             }
         }
+
 
         // =========================================================
         public async Task CollectData()
@@ -110,6 +115,8 @@ namespace DRYRUN
             await UpdateCpu();
             UpdateRam();
             AnalyzeBattery();
+            await PushMetricsToN8n();
+
 
             CheckMobileConnection();
             DetectUsbInstability();
@@ -386,19 +393,7 @@ namespace DRYRUN
                 ResetMobileValues();
             }
         }
-        public async Task SyncToSupabase(SupabaseService service)
-        {
-            var data = new Models.SystemMetric
-            {
-                CpuUsage = this.CpuUsage,
-                RamUsagePercent = this.RamUsagePercent,
-                GreenScore = this.GreenScore,
-                IsMobileConnected = this.IsMobileConnected,
-                MobileBatteryLevel = this.MobileBatteryLevel
-            };
-
-            await service.SaveMetrics(data);
-        }
+       
         public void GetMobileCpuInfo()
         {
             string output = RunAdbCommand("shell dumpsys cpuinfo");
